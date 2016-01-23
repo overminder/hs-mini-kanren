@@ -42,6 +42,15 @@ unfoldPair t = ([], t)
 
 type Env = M.Map Var Term
 
+domain :: Env -> [Var]
+domain = M.keys
+
+canonize :: Env -> Term -> Term
+canonize env t = case t of
+  TAtom _ -> t
+  TVar v -> maybe t (canonize $ M.delete v env) $ M.lookup v env
+  TPair a d -> canonize env a `TPair` canonize env d
+
 data UnifyError
   = OccursCheck Var Term
   | AtomsDiffer Atom Atom
@@ -62,6 +71,11 @@ unify t1 t2 env = case (t1, t2) of
   t `unifyVar` v = if v `notIn` t
     then tryExtend v t env
     else Left $ OccursCheck v t
+
+unifyC :: Term -> Term -> Env -> Either UnifyError Env
+unifyC t1 t2 env = unify (c t1) (c t2) env
+ where
+  c = canonize env
 
 notIn :: Var -> Term -> Bool
 notIn v1 t2 = case t2 of

@@ -30,6 +30,8 @@ library
                      , FlexibleInstances
                      , DeriveFunctor
                      , GeneralizedNewtypeDeriving
+                     , RecordWildCards
+                     , LambdaCase
 
 executable repl
   hs-source-dirs:      app
