@@ -51,3 +51,6 @@ instance MonadPlus (BT s) where
   mzero = BT $ const []
   BT m1 `mplus` BT m2 = BT $ \ s -> m1 s ++ m2 s
 
+-- Alternating combinators
+
+

@@ -7,14 +7,12 @@ import qualified Data.Map as M
 
 data Var
   = VNamed T.Text Int
-  | VUnnamed Int
+  | VGen Int
   deriving (Eq, Ord)
 
-instance IsString Var where
-  fromString = Var . fromString
-
 instance Show Var where
-  show (Var v) = "_." ++ show v
+  show (VNamed s i) = T.unpack s ++ "." ++ show i
+  show (VGen i) = "_." ++ show i
 
 newtype Atom = Atom { unAtom :: T.Text }
   deriving (Eq, Ord, IsString)
@@ -23,10 +21,13 @@ instance Show Atom where
   show (Atom a) = '\'' : T.unpack a
 
 data Term
-  = TAtom !Atom
-  | TPair !Term !Term
-  | TVar !Var
+  = TAtom Atom
+  | TPair Term Term
+  | TVar Var
   deriving (Eq)
+
+instance IsString Term where
+  fromString = TAtom . fromString
 
 instance Show Term where
   show (TAtom a) = show a
@@ -40,6 +41,8 @@ instance Show Term where
 
 foldPair :: [Term] -> Term
 foldPair = foldr TPair nil
+
+list = foldPair
 
 unfoldPair :: Term -> ([Term], Term)
 unfoldPair (TPair t1 t2) = let (ts, last) = unfoldPair t2 in (t1:ts, last)
