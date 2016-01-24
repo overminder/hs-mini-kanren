@@ -8,6 +8,12 @@ import Control.Monad
 import Control.Applicative
 import Control.Arrow
 
+-- StateT s (Logic a)
+-- s -> (s, [a])
+--
+-- Logic a
+-- [a]
+
 -- LogicT (State s) a
 newtype BT s a = BT { runBT :: s -> [(a, s)] }
   deriving (Functor)
@@ -22,10 +28,7 @@ mapBT :: (s -> s1) -> (s1 -> s) -> BT s a -> BT s1 a
 mapBT f g (BT h) = BT $ \ s1 -> map (second f) $ h (g s1)
 
 withBT :: s -> BT s a -> BT s a
-withBT s m = do
-  --s' <- solutions
-  --mapBT (const s) (const s') m
-  mapBT id (const s) m
+withBT s (BT f) = BT $ \ _ -> f s
 
 instance Applicative (BT s) where
   pure = return

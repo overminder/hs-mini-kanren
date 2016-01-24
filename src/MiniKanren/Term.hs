@@ -1,15 +1,20 @@
 module MiniKanren.Term where
 
-import Data.String (IsString)
+import Data.String (IsString(..))
 import qualified Data.List as L
 import qualified Data.Text as T
 import qualified Data.Map as M
 
-newtype Var = Var { unVar :: T.Text }
+data Var
+  = VNamed T.Text Int
+  | VUnnamed Int
   deriving (Eq, Ord)
 
+instance IsString Var where
+  fromString = Var . fromString
+
 instance Show Var where
-  show = T.unpack . unVar
+  show (Var v) = "_." ++ show v
 
 newtype Atom = Atom { unAtom :: T.Text }
   deriving (Eq, Ord, IsString)

@@ -1,11 +1,16 @@
 module MiniKanren.Predicate (
+  module MiniKanren.Fresh,
   module MiniKanren.Predicate,
   module MiniKanren.Backtracking
 ) where
 
 import MiniKanren.Term
 import MiniKanren.Backtracking
+import MiniKanren.Fresh
 
+import qualified Data.Text as T
+import Control.Monad.Trans
+import Control.Monad.Trans.Either
 import Data.Function (on)
 
 data Predicate
@@ -17,26 +22,31 @@ data Predicate
 
 data CompileError
   = NotAProperList Term
-  | UnknownClause Atom [Term]
-  | NotAnAtom Term
+  | UnknownClause T.Text [Term]
+  | NotAPredicate Term
   deriving (Show)
 
-compileP :: Term -> Either CompileError Predicate
+compileP :: Term -> GenT (Either CompileError) Predicate
 compileP t = do
-  ttag:ts <- unfoldPairAsList t
-  tag <- asAtom ttag
+  ttag:ts <- lift $ unfoldPairAsList t
+  tag <- lift $ asPredTag ttag
   case (tag, ts) of
     ("eq", [t1, t2]) -> pure $ PEq t1 t2
     ("neq", [t1, t2]) -> pure $ PNeq t1 t2
     ("and", [t1, t2]) -> PAnd <$> compileP t1 <*> compileP t2
     ("conde", [t1, t2]) -> PConde <$> compileP t1 <*> compileP t2
-    _ -> Left $ UnknownClause tag ts
+    ("fresh", [vars, body]) -> do
+      names <- lift $ mapM asPredTag =<< unfoldPairAsList vars
+      gens <- mapM (\ name -> (name,) <$> fresh) names
+      compileP =<< replaceVars body (M.fromList gens)
+    _ -> lift $ Left $ UnknownClause tag ts
  where
   unfoldPairAsList t = case unfoldPair t of
-    (ts, rest) | rest == nil -> pure ts
+    (ts, rest) | rest == nil -> Right ts
                | otherwise -> Left $ NotAProperList t
-  asAtom (TAtom a) = pure a
-  asAtom t = Left $ NotAnAtom t
+  asPredTag (TVar (Var a)) = Right a
+  asPredTag t = Left $ NotAPredicate t
+  replaceVars 
 
 data BtState
   = BtState

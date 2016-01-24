@@ -24,7 +24,7 @@ repl = forever $ do
   let
     res = do
       term <- mapLeft ParseTerm $ parseTerm line
-      pred <- mapLeft CompilePredicate $ compileP term
+      pred <- mapLeft CompilePredicate $ (`evalStateT` 0) $ compileP term
       return $ run pred
   case res of
     Left e -> print e
