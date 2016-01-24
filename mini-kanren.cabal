@@ -16,8 +16,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     MiniKanren
-  other-modules:       MiniKanren.Backtracking
-                     , MiniKanren.Term
+  other-modules:       MiniKanren.Term
                      , MiniKanren.Predicate
   build-depends:       base >= 4.7 && < 5
                      , text

@@ -15,6 +15,8 @@ import Data.Either.Combinators
 accumEither :: [Either e a] -> ([e], [a])
 accumEither = foldr (\ ei (es, as) -> either (\e -> (e:es, as)) (\ a -> (es, a:as)) ei) ([], [])
 
-runN :: Int -> (Term -> Predicate) -> [Env]
-runN n = map btEnv . observeMany n . (`solveP` emptyState) . ($ (TVar (VNamed "q" 0)))
+goal = TVar (VNamed "q" 0)
+
+runN :: Int -> (Term -> Predicate) -> [Term]
+runN n = map (\ s -> canonize (btEnv s) goal) . observeMany n . (`solveP` emptyState) . ($ goal)
 

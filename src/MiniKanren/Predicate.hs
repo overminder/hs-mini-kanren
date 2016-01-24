@@ -1,11 +1,9 @@
 module MiniKanren.Predicate (
   module MiniKanren.Predicate,
-  module MiniKanren.Backtracking,
   module Control.Monad.Logic
 ) where
 
 import MiniKanren.Term
-import MiniKanren.Backtracking
 import Debug.Trace
 
 import qualified Data.Map as M
@@ -73,9 +71,10 @@ solveP p s@BtState {..} = do
       let s' = s{btGen = btGen + length names}
           newVars = zipWith VNamed names [btGen..]
           p' = mkP (map TVar newVars)
+          -- | XXX: Sometimes some vars are not deleted correctly.
           rmFreshes = \ s@BtState {..} -> s {
             btGen = btGen - length names,
             btEnv = foldr M.delete btEnv newVars
           }
-       in rmFreshes <$> solveP p' s'
+       in id <$> solveP p' s'
 
