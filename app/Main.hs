@@ -5,8 +5,8 @@ import MiniKanren
 prog1 q = entry
  where
   entry = freshN ["q1", "q2", "q3"] $ \ [q1, q2, q3] ->
-    --typeOfTerm s nil q
-    typeOfTerm (tApp (tApp s k) k) nil q
+    typeOfTerm s nil q
+    --typeOfTerm (tApp (tApp s k) k) nil q
 
   id = tLam "x" $ tVar "x"
   ap = tLam "f" $ tLam "x" $ tApp (tVar "f") (tVar "x")
@@ -108,9 +108,9 @@ mkNat n = succ_ $ mkNat (n - 1)
 fromNat (TAtom "O") = 0
 fromNat (TPair "S" x) = 1 + fromNat x
 
-tyCon a = list ["tyCon", a]
-tyApp a b = list ["tyApp", a, b]
-funTy a b = tyApp (tyApp (tyCon "->") a) b
+--tyCon a = list ["tyCon", a]
+--tyApp a b = list ["tyApp", a, b]
+funTy a b = list [a, "->", b]
 
 tVar x = list ["Var", x]
 tLam x y = list ["Lam", x, y]
@@ -126,8 +126,8 @@ typeOfTerm term env o =
                   , typeOfTerm e env' o'
                   , funTy tv o' === o
                   ]
-        , freshN ["f", "fType", "fType0", "fBodyTy0", "a", "aType"] $ \
-                  [f, fType, fType0, fBodyTy0, a, aType] ->
+        , freshN ["f", "fType", "a", "aType"] $ \
+                  [f, fType, a, aType] ->
           program [ term === tApp f a
                   , typeOfTerm a env aType
                   , typeOfTerm f env (funTy aType o)
