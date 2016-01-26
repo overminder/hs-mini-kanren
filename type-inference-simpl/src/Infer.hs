@@ -1,6 +1,6 @@
 module Infer where
 
-import Term
+import Expr
 
 import Control.Lens
 import Data.Maybe (fromMaybe)
@@ -20,18 +20,28 @@ freshTyVar = uses _1 TyVar <* (_1 += 1)
 
 data TypeF a
   = TyConF Name
-  | TyVarF TyId
   | TyAppF a a
-  deriving (Functor, Eq)
+  | TyVarF TyId  -- A monomorphic type var
+  | TyGenF TyId  -- A polymorphic type var
+  deriving (Functor, Eq, Show)
+
+pattern TyCon name = Fix (TyConF name)  
+pattern TyApp f a = Fix (TyAppF f a)
+pattern TyVar v = Fix (TyVarF v)
+pattern TyGen v = Fix (TyGenF v)
 
 newtype ShowType = ShowType { runShowType :: Type }
 
 instance Show ShowType where
-  show = cata go . runShowType
+  show = go . runShowType
    where
-    go (TyConF c) = c
-    go (TyVarF v) = "t" ++ show v
-    go (TyAppF f a) = f ++ " " ++ a
+    go (TyCon c) = c
+    go (TyGen v) = "g" ++ show v
+    go (TyVar v) = "m" ++ show v
+    go (TyApp (TyApp (TyCon "->") a) b) = "(" ++ go a ++ " -> " ++ go b ++ ")"
+    go (TyApp f a) = go f ++ " " ++ go a
+
+showType = show . ShowType
 
 type Type = Fix TypeF
 type TyId = Int
@@ -48,10 +58,6 @@ instance Show UnifyError where
   show (CannotUnify t1 t2) = "CannotUnify " ++ show (ShowType t1) ++ " " ++ show (ShowType t2)
   show (OccurCheck v t) = "OccurCheck " ++ show (ShowType (TyVar v)) ++ " " ++ show (ShowType t)
   show (Unbound v) = "Unbound " ++ v
-
-pattern TyCon name = Fix (TyConF name)  
-pattern TyApp f a = Fix (TyAppF f a)
-pattern TyVar v = Fix (TyVarF v)
 
 funTyCon = TyCon "->"
 funTy a b = funTyCon `TyApp` a `TyApp` b
@@ -83,6 +89,9 @@ canonize env = cata go
   go t@(TyVarF v) = maybe (Fix t) (canonize $ M.delete v env) $ M.lookup v env
   go (TyAppF f a) = Fix (TyAppF f a)
 
+canonizeI :: Type -> InferM Type
+canonizeI t = uses _2 (`canonize` t)
+
 tyVars :: Type -> IS.IntSet
 tyVars = cata go
  where
@@ -98,23 +107,21 @@ tryExtend v t tenv = case M.lookup v tenv of
 extend :: TyId -> Type -> TyEnv -> TyEnv
 extend = M.insert
 
-type TermEnv = M.Map Name Type
+type ExprEnv = M.Map Name Type
 type InferM = GenT UnifyM
 
-emptyTermEnv = M.empty
+emptyExprEnv = M.empty
 
 runUnify :: Type -> Type -> InferM ()
 runUnify t1 t2 = do
   tenv <- use _2
-  tenv' <- lift $ unify t1 t2 tenv
+  tenv' <- lift $ unifyC t1 t2 tenv
   _2 .= tenv'
 
-runInfer :: Term -> TermEnv -> UnifyM Type 
-runInfer term env = (`evalStateT` emptyGen) $ do
-  t <- infer term env
-  uses _2 (`canonize` t)
+runInfer :: Expr -> ExprEnv -> UnifyM Type
+runInfer term env = (`evalStateT` emptyGen) $ canonizeI =<< infer term env
 
-infer :: Term -> TermEnv -> InferM Type
+infer :: Expr -> ExprEnv -> InferM Type
 infer term env = case term of
   Var v -> lift $ fromMaybe (Left $ Unbound v) (Right <$> M.lookup v env)
   Lam v e -> do

@@ -1,8 +1,8 @@
 module Lib where
 
-import Term
+import Expr
 import Infer
 import qualified Example
 
 runExample :: IO ()
-runExample = print (fmap ShowType $ runInfer Example.example emptyTermEnv)
+runExample = print . fmap ShowType . (`runInfer` emptyExprEnv) $ Example.example

@@ -16,7 +16,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Lib
-  other-modules:       Term
+  other-modules:       Expr
                      , Infer
                      , Example
   build-depends:       base >= 4.7 && < 5
@@ -31,6 +31,7 @@ library
                      , TypeSynonymInstances
                      , FlexibleInstances
                      , OverloadedStrings
+                     , LambdaCase
 
 executable repl
   hs-source-dirs:      app
