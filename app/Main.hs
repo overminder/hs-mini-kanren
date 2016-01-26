@@ -5,7 +5,12 @@ import MiniKanren
 prog1 q = entry
  where
   entry = freshN ["q1", "q2", "q3"] $ \ [q1, q2, q3] ->
-    typeOfTerm s nil q
+    --typeOfTerm s nil q
+
+    -- Doesn't work since lambdas are not generalized.
+    typeOfTerm (tApp (tApp (tLam "s" $ tLam "k" $ tApp (tApp (tVar "s") (tVar "k")) (tVar "k"))
+          s) k) nil q
+
     --typeOfTerm (tApp (tApp s k) k) nil q
 
   id = tLam "x" $ tVar "x"
@@ -112,9 +117,10 @@ fromNat (TPair "S" x) = 1 + fromNat x
 --tyApp a b = list ["tyApp", a, b]
 funTy a b = list [a, "->", b]
 
-tVar x = list ["Var", x]
-tLam x y = list ["Lam", x, y]
-tApp x y = list ["App", x, y]
+tVar v = list ["Var", v]
+tLam v e = list ["Lam", v, e]
+tApp f a = list ["App", f, a]
+tLet v e = list ["App", v, e]
 typeOfTerm term env o =
   conde [ freshN ["v"] $ \ [v] ->
           program [ term === tVar v
