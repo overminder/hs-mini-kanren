@@ -2,7 +2,8 @@ module Lib where
 
 import Expr
 import Infer
+import Type
 import qualified Example
 
 runExample :: IO ()
-runExample = print . fmap ShowType . (`runInfer` emptyExprEnv) $ Example.example
+runExample = print . (`runInfer` emptyGamma) $ Example.example

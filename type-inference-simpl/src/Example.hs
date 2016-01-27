@@ -4,9 +4,10 @@ import Expr
 
 import Prelude hiding (id)
 
-id = Lam "x" $ Var "x"
-s = Lam "f" $ Lam "g" $ Lam "x" $ "f" `App` "x" `App` ("g" `App` "x")
-k = Lam "x" $ Lam "y" $ "x"
-skk = (Lam "s" $ Lam "k" $ "s" `App` "k" `App` "k") `App` s `App` k
+id = Lam ["x"] $ Var "x"
+s = Lam ["f", "g", "x"] $ ("f" `App` "x") `App` ("g" `App` "x")
+k = Lam ["x", "y"] $ "x"
+skk = (Lam ["s", "k"] $ "s" `App` "k" `App` "k") `App` s `App` k
+skk2 = Let [("s", s), ("k", k)] $ "s" `App` "k" `App` "k"
 
-example = skk
+example = skk2

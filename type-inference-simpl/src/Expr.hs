@@ -1,5 +1,6 @@
 module Expr where
 
+import qualified Data.List as L
 import Data.String (IsString(..))
 import Data.Functor.Foldable
 
@@ -7,9 +8,9 @@ type Name = String
 
 data ExprF a
   = VarF Name
-  | LamF Name a
+  | LamF [Name] a
   | AppF a a
-  | LetF Name a a
+  | LetF [(Name, a)] a
   deriving (Functor)
 
 type Expr = Fix ExprF
@@ -20,7 +21,7 @@ instance IsString Expr where
 pattern Var v = Fix (VarF v)
 pattern Lam v e = Fix (LamF v e)
 pattern App f a = Fix (AppF f a)
-pattern Let v e b = Fix (LetF v e b)
+pattern Let bs e = Fix (LetF bs e)
 
 newtype ShowExpr = ShowExpr Expr
 
@@ -32,5 +33,7 @@ showExpr = cata go
   go = \case
     VarF v -> v
     AppF f a -> f ++ " " ++ a
-    LamF v e -> "\\" ++ v ++ " -> " ++ e
+    LamF vs e -> "\\" ++ L.intercalate " " vs ++ " -> " ++ e
+    LetF bs e -> "let " ++ L.intercalate "; " (map showB bs) ++ e
 
+  showB (name, e) = name ++ " = " ++ e
